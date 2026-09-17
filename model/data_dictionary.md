@@ -1,8 +1,8 @@
-# Data dictionary
+# Data dictionary and glossary
 
-Thirty tables, grouped by subject. Every table states its **grain** — what exactly one row represents. When the grain is not a single clear sentence, the table is doing two jobs at once and needs to be split.
+Thirty tables, grouped by subject, followed by the Brazilian vocabulary the case is built on.
 
-Column-level notes live in `clinic_oltp.dbml` and are carried into the generated DDL as `COMMENT ON COLUMN`. Brazilian business terms are mapped in `glossary.md`.
+Every table states its **grain** — what exactly one row represents. When the grain is not a single clear sentence, the table is doing two jobs at once and needs to be split. Column-level notes live in `clinic_oltp.dbml`.
 
 ---
 
@@ -67,3 +67,54 @@ These three tables are the only ones holding health data (LGPD art. 11). They be
 | `clinical_note` | the clinical record of one completed procedure | Per procedure rather than per visit, because each provider writes and signs their own |
 | `icd10` | one ICD-10 code | The official code is the primary key: stable and externally defined |
 | `clinical_note_diagnosis` | one diagnosis recorded in a note | A note with two diagnoses has two rows; `diagnosis_type` marks the primary one |
+
+---
+
+# Glossary
+
+The case is Brazilian: private clinics here bill health insurers monthly, and those insurers routinely refuse part of what was billed. The model is written in English; this is the vocabulary behind it.
+
+## Business terms
+
+| Portuguese | English | What it means |
+|---|---|---|
+| convênio | payer / health insurer | The company that covers part of the bill |
+| plano | plan | A tier inside a payer. Different tiers cover different services at different rates |
+| particular | self-pay | The patient pays the full price directly; no payer involved |
+| coparticipação | copay | The patient's share of a covered service: the payer covers R$ 120, the patient pays R$ 40 |
+| faturamento | billing | Sending the month's covered services to the payer |
+| **glosa** | **claim denial** | The part of an invoice the payer refuses to pay: missing authorisation, service not covered, mistyped code. The central term of this case |
+| repasse | revenue share | The percentage of what a provider produces that is paid to them |
+| prontuário | clinical note / medical record | Complaint, treatment plan and diagnoses of a completed procedure |
+| CID-10 | ICD-10 | The international classification of diseases |
+| atendimento | encounter | One visit of a patient to the clinic on a given day |
+| agendamento | appointment | One scheduled procedure inside a visit |
+| falta | no-show | The patient did not appear and did not cancel |
+| encaixe | fitting in from the waitlist | Filling a slot freed by a cancellation |
+| encaminhamento | internal referral | One provider sending the patient to another inside the clinic |
+| pacote de sessões | prepaid session package | Ten physiotherapy sessions, paid upfront, consumed over weeks |
+| CPF | taxpayer ID | The Brazilian personal tax number, used as the patient's natural key |
+| CRM, CRN, CREFITO, CRP, COREN | professional licence numbers | Registration with the council of each profession |
+| LGPD art. 11 | Brazilian data protection law, health data | Health data is a special category; access must be restricted by role |
+
+## Table names
+
+| Portuguese (design draft) | English (this repository) | | Portuguese (design draft) | English (this repository) |
+|---|---|---|---|---|
+| unidade | `facility` | | encaminhamento | `internal_referral` |
+| sala | `room` | | cobranca | `charge` |
+| profissional | `provider` | | pagamento | `payment` |
+| especialidade | `specialty` | | pagamento_cobranca | `payment_allocation` |
+| profissional_especialidade | `provider_specialty` | | parcela | `installment` |
+| agenda_profissional | `provider_schedule` | | fatura_convenio | `payer_invoice` |
+| repasse_profissional | `provider_revenue_share` | | fatura_item | `invoice_line` |
+| servico | `service` | | motivo_glosa | `denial_reason` |
+| preco_servico | `service_price` | | prontuario | `clinical_note` |
+| convenio | `payer` | | cid | `icd10` |
+| plano_convenio | `payer_plan` | | prontuario_cid | `clinical_note_diagnosis` |
+| preco_convenio | `payer_contract_price` | | canal_captacao | `acquisition_channel` |
+| paciente | `patient` | | atendimento | `encounter` |
+| paciente_plano | `patient_coverage` | | agendamento | `appointment` |
+| pacote | `session_package` | | lista_espera | `waitlist` |
+
+The model was drafted in Portuguese against a brief written in Portuguese, then renamed. The structure did not change in the translation: same 30 tables, same keys, same relationships.

@@ -3,7 +3,6 @@
 > A **transactional data model for a multi-site health clinic** — 30 tables in DBML covering scheduling and no-shows, payer billing with claim denials, copays, prepaid session packages and access-restricted clinical records. Designed from a written business brief, not reverse-engineered from an existing schema.
 
 [![DBML](https://img.shields.io/badge/DBML-dbdiagram.io-3B82F6?style=flat)](https://dbml.dbdiagram.io/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-DDL-4169E1?style=flat&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Tables](https://img.shields.io/badge/Tables-30-0C6857?style=flat)]()
 [![Case](https://img.shields.io/badge/Case-fictional%20·%20no%20real%20data-34A853?style=flat)]()
 
@@ -15,9 +14,9 @@ A database designed from scratch for a fictional multi-professional clinic with 
 
 The model is written in **DBML**: version-controlled text that renders as a diagram and generates SQL.
 
-The case is Brazilian, so the business rules include monthly billing to health insurers, partial refusals of those invoices (*glosa*, i.e. claim denials), copays, and the health-data restrictions of the Brazilian data protection law. `docs/glossary.md` maps every one of those terms to its Portuguese original.
+The case is Brazilian, so the business rules include monthly billing to health insurers, partial refusals of those invoices (*glosa*, i.e. claim denials), copays, and the health-data restrictions of the Brazilian data protection law. The glossary in `model/data_dictionary.md` maps every one of those terms to its Portuguese original.
 
-> **Scope:** this is design work. No database has been deployed and no data has been loaded. The SQL in `sql/` is the DDL generated from the model.
+> **Scope:** this is design work. No database has been deployed and no data has been loaded.
 
 ## The business problem
 
@@ -97,29 +96,23 @@ The model was checked against concrete scenarios rather than by reading it back:
 ## Repository structure
 
 ```
-clinic_oltp.dbml          the model — the source of truth
-sql/01_ddl_oltp.sql       PostgreSQL DDL generated from the model
-docs/data_dictionary.md   grain and purpose of each of the 30 tables
-docs/glossary.md          Brazilian clinic vocabulary mapped to English
-diagrams/er_model.png     rendered ER diagram
+model/clinic_oltp.dbml        the model — the source of truth
+model/data_dictionary.md      grain of each of the 30 tables, plus the PT→EN glossary
 ```
 
-## Reproducing the SQL
-
-The DDL is generated from the model with the official DBML CLI:
+Open `clinic_oltp.dbml` at [dbdiagram.io](https://dbdiagram.io) to render the diagram, or generate the DDL with the official CLI:
 
 ```bash
-npx -p @dbml/cli dbml2sql clinic_oltp.dbml -o sql/01_ddl_oltp.sql
+npx -p @dbml/cli dbml2sql model/clinic_oltp.dbml -o schema.sql
 ```
-
-It carries primary and foreign keys, unique constraints, the two `CHECK` constraints and the column comments written in the model.
 
 ## Limitations
 
 - The clinic, its sites, providers and patients are **fictional**. No real patient or client data appears anywhere in this repository.
 - The model has **not been deployed**: no database created, no data loaded, no query run against it.
-- The generated DDL is a starting point. Hand-written refinements — `CHECK` constraints for the status and payment-method domains, indexes for the reporting access paths, referential actions on delete, and `GRANT`s implementing the clinical-data separation — are the next step and are not in this repository yet.
+- The physical layer is not here yet. Hand-written DDL — `CHECK` constraints for the status and payment-method domains, indexes for the reporting access paths, referential actions on delete, and `GRANT`s implementing the clinical-data separation — is the next step.
 
 ## Next
 
-The analytical counterpart: a dimensional model (star schema) answering the board's ten questions from the same business case.
+1. The physical schema, written by hand rather than generated.
+2. The analytical counterpart: a dimensional model (star schema) answering the board's ten questions from the same business case.
