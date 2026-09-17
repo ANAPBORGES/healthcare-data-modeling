@@ -1,423 +1,529 @@
 -- SQL dump generated using DBML (dbml.dbdiagram.io)
 -- Database: PostgreSQL
--- Generated at: 2026-09-17T19:51:38.687Z
+-- Generated at: 2026-09-17T20:28:52.834Z
 
-CREATE TABLE "unidade" (
-  "id_unidade" int PRIMARY KEY,
-  "nome_unidade" varchar(50) UNIQUE NOT NULL,
-  "endereco_unidade" varchar(150) NOT NULL,
-  "bairro_unidade" varchar(50) NOT NULL,
-  "cidade_unidade" varchar(50) NOT NULL
+CREATE TABLE "facility" (
+  "facility_id" int PRIMARY KEY,
+  "facility_name" varchar(50) UNIQUE NOT NULL,
+  "street_address" varchar(150) NOT NULL,
+  "district" varchar(50) NOT NULL,
+  "city" varchar(50) NOT NULL
 );
 
-CREATE TABLE "sala" (
-  "id_sala" int PRIMARY KEY,
-  "id_unidade" int NOT NULL,
-  "nome_sala" varchar(50) NOT NULL
+CREATE TABLE "room" (
+  "room_id" int PRIMARY KEY,
+  "facility_id" int NOT NULL,
+  "room_name" varchar(50) NOT NULL
 );
 
-CREATE TABLE "profissional" (
-  "id_profissional" int PRIMARY KEY,
-  "nome_profissional" varchar(150) NOT NULL,
-  "formacao" varchar(50) NOT NULL,
-  "numero_registro" varchar(20) UNIQUE NOT NULL
+CREATE TABLE "provider" (
+  "provider_id" int PRIMARY KEY,
+  "provider_name" varchar(150) NOT NULL,
+  "profession" varchar(50) NOT NULL,
+  "license_number" varchar(20) UNIQUE NOT NULL
 );
 
-CREATE TABLE "especialidade" (
-  "id_especialidade" int PRIMARY KEY,
-  "nome_especialidade" varchar(80) UNIQUE NOT NULL
+CREATE TABLE "specialty" (
+  "specialty_id" int PRIMARY KEY,
+  "specialty_name" varchar(80) UNIQUE NOT NULL
 );
 
-CREATE TABLE "profissional_especialidade" (
-  "id_profissional" int NOT NULL,
-  "id_especialidade" int NOT NULL,
-  PRIMARY KEY ("id_especialidade", "id_profissional")
+CREATE TABLE "provider_specialty" (
+  "provider_id" int NOT NULL,
+  "specialty_id" int NOT NULL,
+  PRIMARY KEY ("specialty_id", "provider_id")
 );
 
-CREATE TABLE "agenda_profissional" (
-  "id_agenda" int PRIMARY KEY,
-  "id_profissional" int NOT NULL,
-  "id_unidade" int NOT NULL,
-  "dia_da_semana" int NOT NULL,
-  "hora_inicio" time NOT NULL,
-  "hora_fim" time NOT NULL,
-  "vigencia_inicio" date NOT NULL,
-  "vigencia_fim" date
+CREATE TABLE "provider_schedule" (
+  "schedule_id" int PRIMARY KEY,
+  "provider_id" int NOT NULL,
+  "facility_id" int NOT NULL,
+  "weekday" int NOT NULL,
+  "start_time" time NOT NULL,
+  "end_time" time NOT NULL,
+  "valid_from" date NOT NULL,
+  "valid_to" date
 );
 
-CREATE TABLE "repasse_profissional" (
-  "id_repasse" int PRIMARY KEY,
-  "id_profissional" int NOT NULL,
-  "percentual" decimal(5,2) NOT NULL CHECK (percentual between 0 and 100),
-  "vigencia_inicio" date NOT NULL,
-  "vigencia_fim" date
+CREATE TABLE "provider_revenue_share" (
+  "revenue_share_id" int PRIMARY KEY,
+  "provider_id" int NOT NULL,
+  "share_pct" decimal(5,2) NOT NULL CHECK (share_pct between 0 and 100),
+  "valid_from" date NOT NULL,
+  "valid_to" date
 );
 
-CREATE TABLE "servico" (
-  "id_servico" int PRIMARY KEY,
-  "nome_servico" varchar(50) UNIQUE NOT NULL,
-  "tipo_servico" varchar(50) NOT NULL,
-  "id_especialidade" int,
-  "duracao_padrao_min" int NOT NULL
+CREATE TABLE "service" (
+  "service_id" int PRIMARY KEY,
+  "service_name" varchar(50) UNIQUE NOT NULL,
+  "service_type" varchar(50) NOT NULL,
+  "specialty_id" int,
+  "default_duration_min" int NOT NULL
 );
 
-CREATE TABLE "preco_servico" (
-  "id_preco_servico" int PRIMARY KEY,
-  "id_servico" int NOT NULL,
-  "id_unidade" int NOT NULL,
-  "valor" decimal(10,2) NOT NULL,
-  "vigencia_inicio" date NOT NULL,
-  "vigencia_fim" date
+CREATE TABLE "service_price" (
+  "service_price_id" int PRIMARY KEY,
+  "service_id" int NOT NULL,
+  "facility_id" int NOT NULL,
+  "amount" decimal(10,2) NOT NULL,
+  "valid_from" date NOT NULL,
+  "valid_to" date
 );
 
-CREATE TABLE "convenio" (
-  "id_convenio" int PRIMARY KEY,
-  "nome_convenio" varchar(50) UNIQUE NOT NULL
+CREATE TABLE "payer" (
+  "payer_id" int PRIMARY KEY,
+  "payer_name" varchar(50) UNIQUE NOT NULL
 );
 
-CREATE TABLE "plano_convenio" (
-  "id_convenio" int NOT NULL,
-  "id_plano" int PRIMARY KEY,
-  "nome_plano" varchar(50) NOT NULL
+CREATE TABLE "payer_plan" (
+  "payer_id" int NOT NULL,
+  "plan_id" int PRIMARY KEY,
+  "plan_name" varchar(50) NOT NULL
 );
 
-CREATE TABLE "preco_convenio" (
-  "id_preco_convenio" int PRIMARY KEY,
-  "id_plano" int NOT NULL,
-  "id_servico" int NOT NULL,
-  "id_unidade" int NOT NULL,
-  "valor_convenio" decimal(10,2) NOT NULL,
-  "valor_coparticipacao" decimal(10,2) NOT NULL,
-  "vigencia_inicio" date NOT NULL,
-  "vigencia_fim" date
+CREATE TABLE "payer_contract_price" (
+  "contract_price_id" int PRIMARY KEY,
+  "plan_id" int NOT NULL,
+  "service_id" int NOT NULL,
+  "facility_id" int NOT NULL,
+  "payer_amount" decimal(10,2) NOT NULL,
+  "copay_amount" decimal(10,2) NOT NULL,
+  "valid_from" date NOT NULL,
+  "valid_to" date
 );
 
-CREATE TABLE "canal_captacao" (
-  "id_canal_captacao" int PRIMARY KEY,
-  "nome_canal" varchar(50) UNIQUE NOT NULL
+CREATE TABLE "acquisition_channel" (
+  "channel_id" int PRIMARY KEY,
+  "channel_name" varchar(50) UNIQUE NOT NULL
 );
 
-CREATE TABLE "paciente" (
-  "id_paciente" int PRIMARY KEY,
-  "nome_paciente" varchar(150) NOT NULL,
-  "logradouro" varchar(150) NOT NULL,
-  "numero" varchar(10) NOT NULL,
-  "complemento" varchar(50),
-  "cep" char(8) NOT NULL,
-  "bairro" varchar(50),
-  "cidade" varchar(50) NOT NULL,
-  "uf" char(2) NOT NULL,
-  "data_nascimento_paciente" date NOT NULL,
-  "cpf" char(11) UNIQUE NOT NULL,
-  "sexo" varchar(15) NOT NULL,
+CREATE TABLE "patient" (
+  "patient_id" int PRIMARY KEY,
+  "patient_name" varchar(150) NOT NULL,
+  "street" varchar(150) NOT NULL,
+  "street_number" varchar(10) NOT NULL,
+  "address_complement" varchar(50),
+  "postal_code" char(8) NOT NULL,
+  "district" varchar(50),
+  "city" varchar(50) NOT NULL,
+  "state" char(2) NOT NULL,
+  "birth_date" date NOT NULL,
+  "tax_id" char(11) UNIQUE NOT NULL,
+  "sex" varchar(15) NOT NULL,
   "email" varchar(50),
-  "telefone" varchar(20) NOT NULL,
-  "id_canal_captacao" int NOT NULL,
-  "data_cadastro" date NOT NULL
+  "phone" varchar(20) NOT NULL,
+  "channel_id" int NOT NULL,
+  "registered_at" date NOT NULL
 );
 
-CREATE TABLE "paciente_plano" (
-  "id_paciente_plano" int PRIMARY KEY,
-  "id_paciente" int NOT NULL,
-  "id_plano" int NOT NULL,
-  "numero_carteirinha" varchar(30) NOT NULL,
-  "data_inicio" date NOT NULL,
-  "data_fim" date
+CREATE TABLE "patient_coverage" (
+  "coverage_id" int PRIMARY KEY,
+  "patient_id" int NOT NULL,
+  "plan_id" int NOT NULL,
+  "member_number" varchar(30) NOT NULL,
+  "valid_from" date NOT NULL,
+  "valid_to" date
 );
 
-CREATE TABLE "atendimento" (
-  "id_atendimento" int PRIMARY KEY,
-  "id_paciente_plano" int,
-  "id_paciente" int NOT NULL,
-  "data_atendimento" date NOT NULL
+CREATE TABLE "encounter" (
+  "encounter_id" int PRIMARY KEY,
+  "coverage_id" int,
+  "patient_id" int NOT NULL,
+  "encounter_date" date NOT NULL
 );
 
-CREATE TABLE "pacote" (
-  "id_pacote" int PRIMARY KEY,
-  "id_paciente" int NOT NULL,
-  "id_servico" int NOT NULL,
-  "quantidade_sessoes" int NOT NULL,
-  "valor_total_pago" decimal(10,2) NOT NULL,
-  "data_compra" date NOT NULL,
-  "data_expiracao" date NOT NULL
+CREATE TABLE "session_package" (
+  "package_id" int PRIMARY KEY,
+  "patient_id" int NOT NULL,
+  "service_id" int NOT NULL,
+  "session_count" int NOT NULL,
+  "amount_paid" decimal(10,2) NOT NULL,
+  "purchase_date" date NOT NULL,
+  "expires_on" date NOT NULL
 );
 
-CREATE TABLE "agendamento" (
-  "id_agendamento" int PRIMARY KEY,
-  "id_atendimento" int NOT NULL,
-  "id_profissional" int NOT NULL,
-  "id_servico" int NOT NULL,
-  "id_sala" int NOT NULL,
+CREATE TABLE "appointment" (
+  "appointment_id" int PRIMARY KEY,
+  "encounter_id" int NOT NULL,
+  "provider_id" int NOT NULL,
+  "service_id" int NOT NULL,
+  "room_id" int NOT NULL,
   "status" varchar(20) NOT NULL,
-  "id_pacote" int,
-  "id_agendamento_origem" int,
-  "hora_inicio" time NOT NULL,
-  "hora_fim" time NOT NULL,
-  "data_marcacao" timestamp NOT NULL
+  "package_id" int,
+  "rescheduled_from_id" int,
+  "start_time" time NOT NULL,
+  "end_time" time NOT NULL,
+  "booked_at" timestamp NOT NULL
 );
 
-CREATE TABLE "lista_espera" (
-  "id_lista_espera" int PRIMARY KEY,
-  "id_paciente" int NOT NULL,
-  "id_servico" int NOT NULL,
-  "id_unidade" int NOT NULL,
-  "id_profissional" int,
-  "data_inclusao_lista_espera" timestamp NOT NULL,
-  "situacao" varchar(50) NOT NULL,
-  "id_agendamento_gerado" int
+CREATE TABLE "waitlist" (
+  "waitlist_id" int PRIMARY KEY,
+  "patient_id" int NOT NULL,
+  "service_id" int NOT NULL,
+  "facility_id" int NOT NULL,
+  "provider_id" int,
+  "requested_at" timestamp NOT NULL,
+  "status" varchar(50) NOT NULL,
+  "fulfilled_appointment_id" int
 );
 
-CREATE TABLE "encaminhamento" (
-  "id_encaminhamento" int PRIMARY KEY,
-  "id_agendamento_origem" int NOT NULL,
-  "id_profissional_destino" int NOT NULL,
-  "id_agendamento_destino" int,
-  "data_encaminhamento" timestamp NOT NULL
+CREATE TABLE "internal_referral" (
+  "referral_id" int PRIMARY KEY,
+  "source_appointment_id" int NOT NULL,
+  "target_provider_id" int NOT NULL,
+  "target_appointment_id" int,
+  "referred_at" timestamp NOT NULL
 );
 
-CREATE TABLE "cobranca" (
-  "id_cobranca" int PRIMARY KEY,
-  "id_agendamento" int,
-  "id_pacote" int,
-  "tipo_pagador" varchar(50) NOT NULL,
-  "valor" decimal(10,2) NOT NULL,
-  "data_cobranca" date NOT NULL
+CREATE TABLE "charge" (
+  "charge_id" int PRIMARY KEY,
+  "appointment_id" int,
+  "package_id" int,
+  "payer_type" varchar(50) NOT NULL,
+  "amount" decimal(10,2) NOT NULL,
+  "charged_on" date NOT NULL
 );
 
-CREATE TABLE "pagamento" (
-  "id_pagamento" int PRIMARY KEY,
-  "forma_pagamento" varchar(15) NOT NULL,
-  "valor" decimal(10,2) NOT NULL,
-  "data_pagamento" date NOT NULL
+CREATE TABLE "payment" (
+  "payment_id" int PRIMARY KEY,
+  "payment_method" varchar(15) NOT NULL,
+  "amount" decimal(10,2) NOT NULL,
+  "paid_on" date NOT NULL
 );
 
-CREATE TABLE "pagamento_cobranca" (
-  "id_pagamento" int NOT NULL,
-  "id_cobranca" int NOT NULL,
-  "valor_aplicado" decimal(10,2) NOT NULL,
-  PRIMARY KEY ("id_cobranca", "id_pagamento")
+CREATE TABLE "payment_allocation" (
+  "payment_id" int NOT NULL,
+  "charge_id" int NOT NULL,
+  "allocated_amount" decimal(10,2) NOT NULL,
+  PRIMARY KEY ("charge_id", "payment_id")
 );
 
-CREATE TABLE "parcela" (
-  "id_parcela" int PRIMARY KEY,
-  "id_pagamento" int NOT NULL,
-  "valor_parcela" decimal(10,2) NOT NULL,
-  "numero_parcela" int NOT NULL CHECK (numero_parcela between 1 and 6),
-  "data_vencimento_parcela" date NOT NULL,
-  "data_recebimento" date
+CREATE TABLE "installment" (
+  "installment_id" int PRIMARY KEY,
+  "payment_id" int NOT NULL,
+  "amount" decimal(10,2) NOT NULL,
+  "installment_number" int NOT NULL CHECK (installment_number between 1 and 6),
+  "due_date" date NOT NULL,
+  "settled_on" date
 );
 
-CREATE TABLE "fatura_convenio" (
-  "id_fatura" int PRIMARY KEY,
-  "id_convenio" int NOT NULL,
-  "id_unidade" int NOT NULL,
-  "competencia" date NOT NULL,
-  "data_envio" date NOT NULL,
-  "data_recebimento" date,
-  "valor_recebido" decimal(10,2)
+CREATE TABLE "payer_invoice" (
+  "invoice_id" int PRIMARY KEY,
+  "payer_id" int NOT NULL,
+  "facility_id" int NOT NULL,
+  "billing_period" date NOT NULL,
+  "submitted_on" date NOT NULL,
+  "paid_on" date,
+  "amount_received" decimal(10,2)
 );
 
-CREATE TABLE "motivo_glosa" (
-  "id_motivo_glosa" int PRIMARY KEY,
-  "descricao_motivo" varchar(50) UNIQUE NOT NULL
+CREATE TABLE "denial_reason" (
+  "denial_reason_id" int PRIMARY KEY,
+  "reason_description" varchar(50) UNIQUE NOT NULL
 );
 
-CREATE TABLE "fatura_item" (
-  "id_fatura_item" int PRIMARY KEY,
-  "id_fatura" int NOT NULL,
-  "id_cobranca" int UNIQUE NOT NULL,
-  "valor_glosado" decimal(10,2) NOT NULL DEFAULT 0,
-  "id_motivo_glosa" int
+CREATE TABLE "invoice_line" (
+  "invoice_line_id" int PRIMARY KEY,
+  "invoice_id" int NOT NULL,
+  "charge_id" int UNIQUE NOT NULL,
+  "denied_amount" decimal(10,2) NOT NULL DEFAULT 0,
+  "denial_reason_id" int
 );
 
-CREATE TABLE "prontuario" (
-  "id_prontuario" int PRIMARY KEY,
-  "id_agendamento" int UNIQUE NOT NULL,
-  "queixa" varchar(150) NOT NULL,
-  "conduta" varchar(150) NOT NULL,
-  "data_registro" timestamp NOT NULL
+CREATE TABLE "clinical_note" (
+  "note_id" int PRIMARY KEY,
+  "appointment_id" int UNIQUE NOT NULL,
+  "chief_complaint" varchar(150) NOT NULL,
+  "treatment_plan" varchar(150) NOT NULL,
+  "recorded_at" timestamp NOT NULL
 );
 
-CREATE TABLE "cid" (
-  "codigo_cid" varchar(10) PRIMARY KEY,
-  "descricao_cid" varchar(150) NOT NULL
+CREATE TABLE "icd10" (
+  "icd10_code" varchar(10) PRIMARY KEY,
+  "icd10_description" varchar(150) NOT NULL
 );
 
-CREATE TABLE "prontuario_cid" (
-  "id_prontuario" int NOT NULL,
-  "codigo_cid" varchar(10) NOT NULL,
-  "tipo_diagnostico" varchar(50) NOT NULL,
-  PRIMARY KEY ("id_prontuario", "codigo_cid")
+CREATE TABLE "clinical_note_diagnosis" (
+  "note_id" int NOT NULL,
+  "icd10_code" varchar(10) NOT NULL,
+  "diagnosis_type" varchar(50) NOT NULL,
+  PRIMARY KEY ("note_id", "icd10_code")
 );
 
-CREATE UNIQUE INDEX ON "sala" ("id_unidade", "nome_sala");
+CREATE UNIQUE INDEX ON "room" ("facility_id", "room_name");
 
-CREATE UNIQUE INDEX ON "plano_convenio" ("id_convenio", "nome_plano");
+CREATE UNIQUE INDEX ON "payer_plan" ("payer_id", "plan_name");
 
-CREATE UNIQUE INDEX ON "parcela" ("id_pagamento", "numero_parcela");
+CREATE UNIQUE INDEX ON "installment" ("payment_id", "installment_number");
 
-CREATE UNIQUE INDEX ON "fatura_convenio" ("id_convenio", "id_unidade", "competencia");
+CREATE UNIQUE INDEX ON "payer_invoice" ("payer_id", "facility_id", "billing_period");
 
-COMMENT ON TABLE "unidade" IS '1 linha = Uma unidade da clínica';
+COMMENT ON TABLE "facility" IS '1 row = one clinic site';
 
-COMMENT ON TABLE "sala" IS '1 linha = Uma sala da clínica';
+COMMENT ON TABLE "room" IS '1 row = one physical room inside a site';
 
-COMMENT ON TABLE "profissional" IS '1 linha = Uma pessoa que atende na clínica';
+COMMENT ON TABLE "provider" IS '1 row = one person who treats patients';
 
-COMMENT ON TABLE "especialidade" IS '1 linha = Uma especialidade';
+COMMENT ON COLUMN "provider"."profession" IS 'physician, dietitian, physiotherapist, psychologist, nurse';
 
-COMMENT ON TABLE "profissional_especialidade" IS '1 linha = O profissional tem uma especialidade. Se tiver mais de uma, aparecerá mais vezes';
+COMMENT ON COLUMN "provider"."license_number" IS 'CRM, CRN, CREFITO, CRP, COREN: the natural key';
 
-COMMENT ON TABLE "agenda_profissional" IS '1 linha = Um bloco fixo: profissional, unidade, dia e horário';
+COMMENT ON TABLE "specialty" IS '1 row = one specialty';
 
-COMMENT ON COLUMN "agenda_profissional"."dia_da_semana" IS '1=segunda ... 7=domingo';
+COMMENT ON TABLE "provider_specialty" IS '1 row = this provider holds this specialty. Two specialties, two rows';
 
-COMMENT ON TABLE "repasse_profissional" IS '1 linha = Um percentual de repasse';
+COMMENT ON TABLE "provider_schedule" IS '1 row = one weekly block: provider, site, weekday and time window';
 
-COMMENT ON COLUMN "repasse_profissional"."vigencia_fim" IS 'Vazio = vigente';
+COMMENT ON COLUMN "provider_schedule"."facility_id" IS 'The only place that says where a provider works';
 
-COMMENT ON TABLE "servico" IS '1 linha = Um item do catálogo de serviços';
+COMMENT ON COLUMN "provider_schedule"."weekday" IS '1=Monday ... 7=Sunday';
 
-COMMENT ON TABLE "preco_servico" IS '1 linha = Preço particular de um serviço, em uma unidade, em um período';
+COMMENT ON COLUMN "provider_schedule"."valid_to" IS 'Empty = still in force';
 
-COMMENT ON COLUMN "preco_servico"."vigencia_fim" IS 'Vazio = preço atual';
+COMMENT ON TABLE "provider_revenue_share" IS '1 row = one revenue-share percentage valid for a period';
 
-COMMENT ON TABLE "convenio" IS '1 linha = Uma operadora';
+COMMENT ON COLUMN "provider_revenue_share"."valid_from" IS 'May payout uses the share in force in May, not today';
 
-COMMENT ON TABLE "plano_convenio" IS '1 linha = Um plano de um convênio';
+COMMENT ON COLUMN "provider_revenue_share"."valid_to" IS 'Empty = current';
 
-COMMENT ON TABLE "preco_convenio" IS '1 linha = Quanto um plano paga por um serviço, em uma unidade, em um período';
+COMMENT ON TABLE "service" IS '1 row = one catalogue item';
 
-COMMENT ON COLUMN "preco_convenio"."vigencia_fim" IS 'Vazio = valor atual';
+COMMENT ON COLUMN "service"."service_type" IS 'consultation, follow_up, exam, session, assessment';
 
-COMMENT ON TABLE "canal_captacao" IS '1 linha = Uma forma de conhecer a clínica';
+COMMENT ON COLUMN "service"."specialty_id" IS 'Empty for exams, which have no specialty';
 
-COMMENT ON TABLE "paciente" IS '1 linha = Uma pessoa cadastrada';
+COMMENT ON COLUMN "service"."default_duration_min" IS 'Minutes. On the service, not the type: ultrasound and blood work differ';
 
-COMMENT ON TABLE "paciente_plano" IS '1 linha = Um período que o paciente teve um plano';
+COMMENT ON TABLE "service_price" IS '1 row = self-pay price of a service, at a site, for a period';
 
-COMMENT ON COLUMN "paciente_plano"."data_fim" IS 'Vazio = plano ativo';
+COMMENT ON COLUMN "service_price"."valid_to" IS 'Empty = current price. List prices change about once a year';
 
-COMMENT ON TABLE "atendimento" IS '1 linha = Uma ida do paciente na clinica, a visita';
+COMMENT ON TABLE "payer" IS '1 row = one health insurer. Separate from plan because invoices are issued per payer';
 
-COMMENT ON TABLE "pacote" IS '1 linha = Um pacote de serviços vendido, por exemplo 10 sessões de fisioterapia';
+COMMENT ON TABLE "payer_plan" IS '1 row = one plan of a payer';
 
-COMMENT ON TABLE "agendamento" IS '1 linha = Um procedimento marcado';
+COMMENT ON TABLE "payer_contract_price" IS '1 row = what a plan pays for a service, at a site, for a period. No row = service not covered';
 
-COMMENT ON TABLE "lista_espera" IS '1 linha = Um pedido de encaixe';
+COMMENT ON COLUMN "payer_contract_price"."payer_amount" IS 'The share the payer covers';
 
-COMMENT ON TABLE "encaminhamento" IS '1 linha = Um profissional indicado para o paciente';
+COMMENT ON COLUMN "payer_contract_price"."copay_amount" IS 'The share the patient pays. Zero when the plan has no copay';
 
-COMMENT ON TABLE "cobranca" IS '1 linha = Um valor devido por um pagador';
+COMMENT ON COLUMN "payer_contract_price"."valid_to" IS 'Empty = current';
 
-COMMENT ON TABLE "pagamento" IS '1 linha = Uma transação';
+COMMENT ON TABLE "acquisition_channel" IS '1 row = one way of hearing about the clinic';
 
-COMMENT ON TABLE "pagamento_cobranca" IS '1 linha = Quanto do pagamento quitou a cobrança';
+COMMENT ON COLUMN "acquisition_channel"."channel_name" IS 'A table, not free text, so Instagram and instagram do not become two channels';
 
-COMMENT ON TABLE "parcela" IS '1 linha = Valor a receber';
+COMMENT ON TABLE "patient" IS '1 row = one registered person. Address split into parts: one value per column';
 
-COMMENT ON TABLE "fatura_convenio" IS '1 linha = A conta mensal enviada a um convenio por uma unidade';
+COMMENT ON COLUMN "patient"."street_number" IS 'Text, not number: 120-A and no-number addresses exist';
 
-COMMENT ON TABLE "motivo_glosa" IS '1 linha = Um motivo de recusa do convênio';
+COMMENT ON COLUMN "patient"."birth_date" IS 'The date, never the age: age changes every year';
 
-COMMENT ON TABLE "fatura_item" IS '1 linha = Cobrança do convênio dentro de uma fatura';
+COMMENT ON COLUMN "patient"."tax_id" IS 'CPF, the Brazilian taxpayer ID. Natural key: blocks duplicate registration';
 
-COMMENT ON TABLE "prontuario" IS 'Acesso restrito. 1 linha = Registro clínico';
+COMMENT ON COLUMN "patient"."registered_at" IS 'First visit. Basis for new vs returning patient';
 
-COMMENT ON TABLE "cid" IS '1 linha = Código do CID-10';
+COMMENT ON TABLE "patient_coverage" IS '1 row = one period in which the patient held a plan. Self-pay = no active row on that date';
 
-COMMENT ON TABLE "prontuario_cid" IS 'Acesso restrito. 1 linha = Diagnóstico registrado no prontuário';
+COMMENT ON COLUMN "patient_coverage"."coverage_id" IS 'Own key because the same patient may hold the same plan in two separate periods';
 
-ALTER TABLE "sala" ADD FOREIGN KEY ("id_unidade") REFERENCES "unidade" ("id_unidade") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON COLUMN "patient_coverage"."member_number" IS 'Required on payer invoices. Mistyped here, it becomes a denial';
 
-ALTER TABLE "profissional_especialidade" ADD FOREIGN KEY ("id_profissional") REFERENCES "profissional" ("id_profissional") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON COLUMN "patient_coverage"."valid_to" IS 'Empty = coverage active today';
 
-ALTER TABLE "profissional_especialidade" ADD FOREIGN KEY ("id_especialidade") REFERENCES "especialidade" ("id_especialidade") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON TABLE "encounter" IS '1 row = one visit: the patient coming to the clinic on a given day';
 
-ALTER TABLE "agenda_profissional" ADD FOREIGN KEY ("id_profissional") REFERENCES "profissional" ("id_profissional") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON COLUMN "encounter"."coverage_id" IS 'Empty = self-pay. Freezes the plan: a later switch does not rewrite this visit';
 
-ALTER TABLE "agenda_profissional" ADD FOREIGN KEY ("id_unidade") REFERENCES "unidade" ("id_unidade") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON COLUMN "encounter"."patient_id" IS 'The patient lives here, and only here';
 
-ALTER TABLE "repasse_profissional" ADD FOREIGN KEY ("id_profissional") REFERENCES "profissional" ("id_profissional") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON COLUMN "encounter"."encounter_date" IS 'The day of the visit. Every procedure in it happens on this day';
 
-ALTER TABLE "servico" ADD FOREIGN KEY ("id_especialidade") REFERENCES "especialidade" ("id_especialidade") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON TABLE "session_package" IS '1 row = one prepaid package sold to a patient';
 
-ALTER TABLE "preco_servico" ADD FOREIGN KEY ("id_servico") REFERENCES "servico" ("id_servico") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON COLUMN "session_package"."patient_id" IS 'The package belongs to the patient, not to a visit: it is used across several';
 
-ALTER TABLE "preco_servico" ADD FOREIGN KEY ("id_unidade") REFERENCES "unidade" ("id_unidade") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON COLUMN "session_package"."session_count" IS '10 today. A column, not a constant, in case a 5-session package appears';
 
-ALTER TABLE "plano_convenio" ADD FOREIGN KEY ("id_convenio") REFERENCES "convenio" ("id_convenio") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON COLUMN "session_package"."expires_on" IS 'Purchase + 6 months, frozen at sale: a rule change does not shorten packages already sold';
 
-ALTER TABLE "preco_convenio" ADD FOREIGN KEY ("id_plano") REFERENCES "plano_convenio" ("id_plano") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON TABLE "appointment" IS '1 row = one scheduled procedure: provider, service, room and time slot';
 
-ALTER TABLE "preco_convenio" ADD FOREIGN KEY ("id_servico") REFERENCES "servico" ("id_servico") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON COLUMN "appointment"."encounter_id" IS 'Consultation + blood work + ultrasound = 3 rows sharing one encounter';
 
-ALTER TABLE "preco_convenio" ADD FOREIGN KEY ("id_unidade") REFERENCES "unidade" ("id_unidade") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON COLUMN "appointment"."room_id" IS 'The site is reached through the room';
 
-ALTER TABLE "paciente" ADD FOREIGN KEY ("id_canal_captacao") REFERENCES "canal_captacao" ("id_canal_captacao") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON COLUMN "appointment"."status" IS 'scheduled, confirmed, completed, cancelled_patient, cancelled_clinic, rescheduled, no_show';
 
-ALTER TABLE "paciente_plano" ADD FOREIGN KEY ("id_paciente") REFERENCES "paciente" ("id_paciente") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON COLUMN "appointment"."package_id" IS 'Set only when the session comes from a package. Balance = sessions minus completed ones';
 
-ALTER TABLE "paciente_plano" ADD FOREIGN KEY ("id_plano") REFERENCES "plano_convenio" ("id_plano") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON COLUMN "appointment"."rescheduled_from_id" IS 'Set when this is a reschedule: points at the original, which carries status rescheduled';
 
-ALTER TABLE "atendimento" ADD FOREIGN KEY ("id_paciente_plano") REFERENCES "paciente_plano" ("id_paciente_plano") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON COLUMN "appointment"."booked_at" IS 'When reception recorded it. Measures the wait between booking and visit';
 
-ALTER TABLE "atendimento" ADD FOREIGN KEY ("id_paciente") REFERENCES "paciente" ("id_paciente") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON TABLE "waitlist" IS '1 row = one request to be fitted in. Holds no slot of its own';
 
-ALTER TABLE "pacote" ADD FOREIGN KEY ("id_paciente") REFERENCES "paciente" ("id_paciente") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON COLUMN "waitlist"."patient_id" IS 'The patient comes straight in here, because no visit exists yet';
 
-ALTER TABLE "pacote" ADD FOREIGN KEY ("id_servico") REFERENCES "servico" ("id_servico") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON COLUMN "waitlist"."provider_id" IS 'Empty = any provider will do';
 
-ALTER TABLE "agendamento" ADD FOREIGN KEY ("id_atendimento") REFERENCES "atendimento" ("id_atendimento") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON COLUMN "waitlist"."requested_at" IS 'Sets who gets called first';
 
-ALTER TABLE "agendamento" ADD FOREIGN KEY ("id_profissional") REFERENCES "profissional" ("id_profissional") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON COLUMN "waitlist"."status" IS 'waiting, scheduled, withdrawn';
 
-ALTER TABLE "agendamento" ADD FOREIGN KEY ("id_servico") REFERENCES "servico" ("id_servico") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON COLUMN "waitlist"."fulfilled_appointment_id" IS 'Empty until the patient is fitted into a cancellation';
 
-ALTER TABLE "agendamento" ADD FOREIGN KEY ("id_sala") REFERENCES "sala" ("id_sala") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON TABLE "internal_referral" IS '1 row = one provider referring the patient to another inside the clinic';
 
-ALTER TABLE "agendamento" ADD FOREIGN KEY ("id_pacote") REFERENCES "pacote" ("id_pacote") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON COLUMN "internal_referral"."source_appointment_id" IS 'Where the referral was made. Provider and patient come from it';
 
-ALTER TABLE "agendamento" ADD FOREIGN KEY ("id_agendamento_origem") REFERENCES "agendamento" ("id_agendamento") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON COLUMN "internal_referral"."target_appointment_id" IS 'Empty until the patient books. Filled = the referral converted';
 
-ALTER TABLE "lista_espera" ADD FOREIGN KEY ("id_paciente") REFERENCES "paciente" ("id_paciente") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON TABLE "charge" IS '1 row = one amount owed by one payer';
 
-ALTER TABLE "lista_espera" ADD FOREIGN KEY ("id_servico") REFERENCES "servico" ("id_servico") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON COLUMN "charge"."package_id" IS 'Exactly one of appointment_id and package_id is filled';
 
-ALTER TABLE "lista_espera" ADD FOREIGN KEY ("id_unidade") REFERENCES "unidade" ("id_unidade") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON COLUMN "charge"."payer_type" IS 'patient or payer. Splits the same procedure into the insurer share and the copay: two rows';
 
-ALTER TABLE "lista_espera" ADD FOREIGN KEY ("id_profissional") REFERENCES "profissional" ("id_profissional") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON COLUMN "charge"."amount" IS 'The amount actually charged, frozen: price tables change and discounts happen';
 
-ALTER TABLE "lista_espera" ADD FOREIGN KEY ("id_agendamento_gerado") REFERENCES "agendamento" ("id_agendamento") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON TABLE "payment" IS '1 row = one patient transaction: a transfer, a card swipe';
 
-ALTER TABLE "encaminhamento" ADD FOREIGN KEY ("id_agendamento_origem") REFERENCES "agendamento" ("id_agendamento") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON COLUMN "payment"."payment_method" IS 'cash, pix, debit, credit';
 
-ALTER TABLE "encaminhamento" ADD FOREIGN KEY ("id_profissional_destino") REFERENCES "profissional" ("id_profissional") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON TABLE "payment_allocation" IS '1 row = how much of a payment settled a given charge. One swipe can settle two charges, and one charge can be split across methods';
 
-ALTER TABLE "encaminhamento" ADD FOREIGN KEY ("id_agendamento_destino") REFERENCES "agendamento" ("id_agendamento") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON TABLE "installment" IS '1 row = one receivable. Cash, debit and transfers have a single one';
 
-ALTER TABLE "cobranca" ADD FOREIGN KEY ("id_agendamento") REFERENCES "agendamento" ("id_agendamento") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON COLUMN "installment"."due_date" IS 'When the card processor transfers the money';
 
-ALTER TABLE "cobranca" ADD FOREIGN KEY ("id_pacote") REFERENCES "pacote" ("id_pacote") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON COLUMN "installment"."settled_on" IS 'Empty = has not cleared yet';
 
-ALTER TABLE "pagamento_cobranca" ADD FOREIGN KEY ("id_pagamento") REFERENCES "pagamento" ("id_pagamento") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON TABLE "payer_invoice" IS '1 row = the monthly invoice sent to a payer by a site';
 
-ALTER TABLE "pagamento_cobranca" ADD FOREIGN KEY ("id_cobranca") REFERENCES "cobranca" ("id_cobranca") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON COLUMN "payer_invoice"."billing_period" IS 'Reference month, stored as its first day';
 
-ALTER TABLE "parcela" ADD FOREIGN KEY ("id_pagamento") REFERENCES "pagamento" ("id_pagamento") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON COLUMN "payer_invoice"."paid_on" IS 'Empty = still open. Measures the 30 to 90 day lag';
 
-ALTER TABLE "fatura_convenio" ADD FOREIGN KEY ("id_convenio") REFERENCES "convenio" ("id_convenio") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON COLUMN "payer_invoice"."amount_received" IS 'What actually landed in the account: a bank fact, not a calculation. Billed and denied are the sum of the lines';
 
-ALTER TABLE "fatura_convenio" ADD FOREIGN KEY ("id_unidade") REFERENCES "unidade" ("id_unidade") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON TABLE "denial_reason" IS '1 row = one reason a payer refused to pay';
 
-ALTER TABLE "fatura_item" ADD FOREIGN KEY ("id_fatura") REFERENCES "fatura_convenio" ("id_fatura") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON COLUMN "denial_reason"."reason_description" IS 'Missing authorisation, service not covered, mistyped code';
 
-ALTER TABLE "fatura_item" ADD FOREIGN KEY ("id_cobranca") REFERENCES "cobranca" ("id_cobranca") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON TABLE "invoice_line" IS '1 row = one payer charge inside an invoice';
 
-ALTER TABLE "fatura_item" ADD FOREIGN KEY ("id_motivo_glosa") REFERENCES "motivo_glosa" ("id_motivo_glosa") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON COLUMN "invoice_line"."charge_id" IS 'Payer charges only. Unique: a charge cannot be invoiced twice';
 
-ALTER TABLE "prontuario" ADD FOREIGN KEY ("id_agendamento") REFERENCES "agendamento" ("id_agendamento") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON COLUMN "invoice_line"."denied_amount" IS 'Zero = paid in full. The billed amount is the charge amount';
 
-ALTER TABLE "prontuario_cid" ADD FOREIGN KEY ("id_prontuario") REFERENCES "prontuario" ("id_prontuario") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON COLUMN "invoice_line"."denial_reason_id" IS 'Empty when nothing was denied';
 
-ALTER TABLE "prontuario_cid" ADD FOREIGN KEY ("codigo_cid") REFERENCES "cid" ("codigo_cid") DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON TABLE "clinical_note" IS 'Restricted access. 1 row = the clinical record of one completed procedure';
+
+COMMENT ON COLUMN "clinical_note"."appointment_id" IS 'One note per completed procedure: each provider writes and signs their own';
+
+COMMENT ON COLUMN "clinical_note"."recorded_at" IS 'May be written after the procedure';
+
+COMMENT ON TABLE "icd10" IS '1 row = one ICD-10 code';
+
+COMMENT ON COLUMN "icd10"."icd10_code" IS 'The natural key is the PK: E03.9 is an official, stable code';
+
+COMMENT ON TABLE "clinical_note_diagnosis" IS 'Restricted access. 1 row = one diagnosis recorded in a note';
+
+COMMENT ON COLUMN "clinical_note_diagnosis"."diagnosis_type" IS 'primary or secondary. The text of the diagnosis already lives in icd10';
+
+ALTER TABLE "room" ADD FOREIGN KEY ("facility_id") REFERENCES "facility" ("facility_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "provider_specialty" ADD FOREIGN KEY ("provider_id") REFERENCES "provider" ("provider_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "provider_specialty" ADD FOREIGN KEY ("specialty_id") REFERENCES "specialty" ("specialty_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "provider_schedule" ADD FOREIGN KEY ("provider_id") REFERENCES "provider" ("provider_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "provider_schedule" ADD FOREIGN KEY ("facility_id") REFERENCES "facility" ("facility_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "provider_revenue_share" ADD FOREIGN KEY ("provider_id") REFERENCES "provider" ("provider_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "service" ADD FOREIGN KEY ("specialty_id") REFERENCES "specialty" ("specialty_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "service_price" ADD FOREIGN KEY ("service_id") REFERENCES "service" ("service_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "service_price" ADD FOREIGN KEY ("facility_id") REFERENCES "facility" ("facility_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "payer_plan" ADD FOREIGN KEY ("payer_id") REFERENCES "payer" ("payer_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "payer_contract_price" ADD FOREIGN KEY ("plan_id") REFERENCES "payer_plan" ("plan_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "payer_contract_price" ADD FOREIGN KEY ("service_id") REFERENCES "service" ("service_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "payer_contract_price" ADD FOREIGN KEY ("facility_id") REFERENCES "facility" ("facility_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "patient" ADD FOREIGN KEY ("channel_id") REFERENCES "acquisition_channel" ("channel_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "patient_coverage" ADD FOREIGN KEY ("patient_id") REFERENCES "patient" ("patient_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "patient_coverage" ADD FOREIGN KEY ("plan_id") REFERENCES "payer_plan" ("plan_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "encounter" ADD FOREIGN KEY ("coverage_id") REFERENCES "patient_coverage" ("coverage_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "encounter" ADD FOREIGN KEY ("patient_id") REFERENCES "patient" ("patient_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "session_package" ADD FOREIGN KEY ("patient_id") REFERENCES "patient" ("patient_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "session_package" ADD FOREIGN KEY ("service_id") REFERENCES "service" ("service_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "appointment" ADD FOREIGN KEY ("encounter_id") REFERENCES "encounter" ("encounter_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "appointment" ADD FOREIGN KEY ("provider_id") REFERENCES "provider" ("provider_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "appointment" ADD FOREIGN KEY ("service_id") REFERENCES "service" ("service_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "appointment" ADD FOREIGN KEY ("room_id") REFERENCES "room" ("room_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "appointment" ADD FOREIGN KEY ("package_id") REFERENCES "session_package" ("package_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "appointment" ADD FOREIGN KEY ("rescheduled_from_id") REFERENCES "appointment" ("appointment_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "waitlist" ADD FOREIGN KEY ("patient_id") REFERENCES "patient" ("patient_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "waitlist" ADD FOREIGN KEY ("service_id") REFERENCES "service" ("service_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "waitlist" ADD FOREIGN KEY ("facility_id") REFERENCES "facility" ("facility_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "waitlist" ADD FOREIGN KEY ("provider_id") REFERENCES "provider" ("provider_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "waitlist" ADD FOREIGN KEY ("fulfilled_appointment_id") REFERENCES "appointment" ("appointment_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "internal_referral" ADD FOREIGN KEY ("source_appointment_id") REFERENCES "appointment" ("appointment_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "internal_referral" ADD FOREIGN KEY ("target_provider_id") REFERENCES "provider" ("provider_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "internal_referral" ADD FOREIGN KEY ("target_appointment_id") REFERENCES "appointment" ("appointment_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "charge" ADD FOREIGN KEY ("appointment_id") REFERENCES "appointment" ("appointment_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "charge" ADD FOREIGN KEY ("package_id") REFERENCES "session_package" ("package_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "payment_allocation" ADD FOREIGN KEY ("payment_id") REFERENCES "payment" ("payment_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "payment_allocation" ADD FOREIGN KEY ("charge_id") REFERENCES "charge" ("charge_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "installment" ADD FOREIGN KEY ("payment_id") REFERENCES "payment" ("payment_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "payer_invoice" ADD FOREIGN KEY ("payer_id") REFERENCES "payer" ("payer_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "payer_invoice" ADD FOREIGN KEY ("facility_id") REFERENCES "facility" ("facility_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "invoice_line" ADD FOREIGN KEY ("invoice_id") REFERENCES "payer_invoice" ("invoice_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "invoice_line" ADD FOREIGN KEY ("charge_id") REFERENCES "charge" ("charge_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "invoice_line" ADD FOREIGN KEY ("denial_reason_id") REFERENCES "denial_reason" ("denial_reason_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "clinical_note" ADD FOREIGN KEY ("appointment_id") REFERENCES "appointment" ("appointment_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "clinical_note_diagnosis" ADD FOREIGN KEY ("note_id") REFERENCES "clinical_note" ("note_id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "clinical_note_diagnosis" ADD FOREIGN KEY ("icd10_code") REFERENCES "icd10" ("icd10_code") DEFERRABLE INITIALLY IMMEDIATE;

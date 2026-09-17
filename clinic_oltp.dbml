@@ -1,0 +1,343 @@
+//========== CLINIC STRUCTURE ==========
+Table facility {
+  facility_id int [pk]
+  facility_name varchar(50) [not null, unique]
+  street_address varchar(150) [not null]
+  district varchar(50) [not null]
+  city varchar(50) [not null]
+
+  Note: '1 row = one clinic site'
+}
+
+Table room {
+  room_id int [pk]
+  facility_id int [not null, ref: > facility.facility_id]
+  room_name varchar(50) [not null]
+
+  indexes {
+    (facility_id, room_name) [unique]
+  }
+
+  Note: '1 row = one physical room inside a site'
+}
+
+Table provider {
+  provider_id int [pk]
+  provider_name varchar(150) [not null]
+  profession varchar(50) [not null, note: 'physician, dietitian, physiotherapist, psychologist, nurse']
+  license_number varchar(20) [not null, unique, note: 'CRM, CRN, CREFITO, CRP, COREN: the natural key']
+
+  Note: '1 row = one person who treats patients'
+}
+
+Table specialty {
+  specialty_id int [pk]
+  specialty_name varchar(80) [not null, unique]
+
+  Note: '1 row = one specialty'
+}
+
+Table provider_specialty {
+  provider_id int [not null, ref: > provider.provider_id]
+  specialty_id int [not null, ref: > specialty.specialty_id]
+
+  indexes {
+    (specialty_id, provider_id) [pk]
+  }
+
+  Note: '1 row = this provider holds this specialty. Two specialties, two rows'
+}
+
+Table provider_schedule {
+  schedule_id int [pk]
+  provider_id int [not null, ref: > provider.provider_id]
+  facility_id int [not null, ref: > facility.facility_id, note: 'The only place that says where a provider works']
+  weekday int [not null, note: '1=Monday ... 7=Sunday']
+  start_time time [not null]
+  end_time time [not null]
+  valid_from date [not null]
+  valid_to date [note: 'Empty = still in force']
+
+  Note: '1 row = one weekly block: provider, site, weekday and time window'
+}
+
+Table provider_revenue_share {
+  revenue_share_id int [pk]
+  provider_id int [not null, ref: > provider.provider_id]
+  share_pct decimal(5,2) [not null, check: `share_pct between 0 and 100`]
+  valid_from date [not null, note: 'May payout uses the share in force in May, not today']
+  valid_to date [note: 'Empty = current']
+
+  Note: '1 row = one revenue-share percentage valid for a period'
+}
+
+
+//========== SERVICES AND PRICES ==========
+Table service {
+  service_id int [pk]
+  service_name varchar(50) [not null, unique]
+  service_type varchar(50) [not null, note: 'consultation, follow_up, exam, session, assessment']
+  specialty_id int [ref: >? specialty.specialty_id, note: 'Empty for exams, which have no specialty']
+  default_duration_min int [not null, note: 'Minutes. On the service, not the type: ultrasound and blood work differ']
+
+  Note: '1 row = one catalogue item'
+}
+
+Table service_price {
+  service_price_id int [pk]
+  service_id int [not null, ref: > service.service_id]
+  facility_id int [not null, ref: > facility.facility_id]
+  amount decimal(10,2) [not null]
+  valid_from date [not null]
+  valid_to date [note: 'Empty = current price. List prices change about once a year']
+
+  Note: '1 row = self-pay price of a service, at a site, for a period'
+}
+
+Table payer {
+  payer_id int [pk]
+  payer_name varchar(50) [not null, unique]
+
+  Note: '1 row = one health insurer. Separate from plan because invoices are issued per payer'
+}
+
+Table payer_plan {
+  payer_id int [not null, ref: > payer.payer_id]
+  plan_id int [pk]
+  plan_name varchar(50) [not null]
+
+  indexes {
+    (payer_id, plan_name) [unique]
+  }
+
+  Note: '1 row = one plan of a payer'
+}
+
+Table payer_contract_price {
+  contract_price_id int [pk]
+  plan_id int [not null, ref: > payer_plan.plan_id]
+  service_id int [not null, ref: > service.service_id]
+  facility_id int [not null, ref: > facility.facility_id]
+  payer_amount decimal(10,2) [not null, note: 'The share the payer covers']
+  copay_amount decimal(10,2) [not null, note: 'The share the patient pays. Zero when the plan has no copay']
+  valid_from date [not null]
+  valid_to date [note: 'Empty = current']
+
+  Note: '1 row = what a plan pays for a service, at a site, for a period. No row = service not covered'
+}
+
+
+//========== PATIENTS ==========
+Table acquisition_channel {
+  channel_id int [pk]
+  channel_name varchar(50) [not null, unique, note: 'A table, not free text, so Instagram and instagram do not become two channels']
+
+  Note: '1 row = one way of hearing about the clinic'
+}
+
+Table patient {
+  patient_id int [pk]
+  patient_name varchar(150) [not null]
+  street varchar(150) [not null]
+  street_number varchar(10) [not null, note: 'Text, not number: 120-A and no-number addresses exist']
+  address_complement varchar(50)
+  postal_code char(8) [not null]
+  district varchar(50)
+  city varchar(50) [not null]
+  state char(2) [not null]
+  birth_date date [not null, note: 'The date, never the age: age changes every year']
+  tax_id char(11) [not null, unique, note: 'CPF, the Brazilian taxpayer ID. Natural key: blocks duplicate registration']
+  sex varchar(15) [not null]
+  email varchar(50)
+  phone varchar(20) [not null]
+  channel_id int [not null, ref: > acquisition_channel.channel_id]
+  registered_at date [not null, note: 'First visit. Basis for new vs returning patient']
+
+  Note: '1 row = one registered person. Address split into parts: one value per column'
+}
+
+Table patient_coverage {
+  coverage_id int [pk, note: 'Own key because the same patient may hold the same plan in two separate periods']
+  patient_id int [not null, ref: > patient.patient_id]
+  plan_id int [not null, ref: > payer_plan.plan_id]
+  member_number varchar(30) [not null, note: 'Required on payer invoices. Mistyped here, it becomes a denial']
+  valid_from date [not null]
+  valid_to date [note: 'Empty = coverage active today']
+
+  Note: '1 row = one period in which the patient held a plan. Self-pay = no active row on that date'
+}
+
+
+//========== SCHEDULING AND VISITS ==========
+Table encounter {
+  encounter_id int [pk]
+  coverage_id int [ref: >? patient_coverage.coverage_id, note: 'Empty = self-pay. Freezes the plan: a later switch does not rewrite this visit']
+  patient_id int [not null, ref: > patient.patient_id, note: 'The patient lives here, and only here']
+  encounter_date date [not null, note: 'The day of the visit. Every procedure in it happens on this day']
+
+  Note: '1 row = one visit: the patient coming to the clinic on a given day'
+}
+
+Table session_package {
+  package_id int [pk]
+  patient_id int [not null, ref: > patient.patient_id, note: 'The package belongs to the patient, not to a visit: it is used across several']
+  service_id int [not null, ref: > service.service_id]
+  session_count int [not null, note: '10 today. A column, not a constant, in case a 5-session package appears']
+  amount_paid decimal(10,2) [not null]
+  purchase_date date [not null]
+  expires_on date [not null, note: 'Purchase + 6 months, frozen at sale: a rule change does not shorten packages already sold']
+
+  Note: '1 row = one prepaid package sold to a patient'
+}
+
+Table appointment {
+  appointment_id int [pk]
+  encounter_id int [not null, ref: > encounter.encounter_id, note: 'Consultation + blood work + ultrasound = 3 rows sharing one encounter']
+  provider_id int [not null, ref: > provider.provider_id]
+  service_id int [not null, ref: > service.service_id]
+  room_id int [not null, ref: > room.room_id, note: 'The site is reached through the room']
+  status varchar(20) [not null, note: 'scheduled, confirmed, completed, cancelled_patient, cancelled_clinic, rescheduled, no_show']
+  package_id int [ref: >? session_package.package_id, note: 'Set only when the session comes from a package. Balance = sessions minus completed ones']
+  rescheduled_from_id int [ref: >? appointment.appointment_id, note: 'Set when this is a reschedule: points at the original, which carries status rescheduled']
+  start_time time [not null]
+  end_time time [not null]
+  booked_at timestamp [not null, note: 'When reception recorded it. Measures the wait between booking and visit']
+
+  Note: '1 row = one scheduled procedure: provider, service, room and time slot'
+}
+
+Table waitlist {
+  waitlist_id int [pk]
+  patient_id int [not null, ref: > patient.patient_id, note: 'The patient comes straight in here, because no visit exists yet']
+  service_id int [not null, ref: > service.service_id]
+  facility_id int [not null, ref: > facility.facility_id]
+  provider_id int [ref: >? provider.provider_id, note: 'Empty = any provider will do']
+  requested_at timestamp [not null, note: 'Sets who gets called first']
+  status varchar(50) [not null, note: 'waiting, scheduled, withdrawn']
+  fulfilled_appointment_id int [ref: >? appointment.appointment_id, note: 'Empty until the patient is fitted into a cancellation']
+
+  Note: '1 row = one request to be fitted in. Holds no slot of its own'
+}
+
+Table internal_referral {
+  referral_id int [pk]
+  source_appointment_id int [not null, ref: > appointment.appointment_id, note: 'Where the referral was made. Provider and patient come from it']
+  target_provider_id int [not null, ref: > provider.provider_id]
+  target_appointment_id int [ref: >? appointment.appointment_id, note: 'Empty until the patient books. Filled = the referral converted']
+  referred_at timestamp [not null]
+
+  Note: '1 row = one provider referring the patient to another inside the clinic'
+}
+
+
+//========== MONEY ==========
+Table charge {
+  charge_id int [pk]
+  appointment_id int [ref: >? appointment.appointment_id]
+  package_id int [ref: >? session_package.package_id, note: 'Exactly one of appointment_id and package_id is filled']
+  payer_type varchar(50) [not null, note: 'patient or payer. Splits the same procedure into the insurer share and the copay: two rows']
+  amount decimal(10,2) [not null, note: 'The amount actually charged, frozen: price tables change and discounts happen']
+  charged_on date [not null]
+
+  Note: '1 row = one amount owed by one payer'
+}
+
+Table payment {
+  payment_id int [pk]
+  payment_method varchar(15) [not null, note: 'cash, pix, debit, credit']
+  amount decimal(10,2) [not null]
+  paid_on date [not null]
+
+  Note: '1 row = one patient transaction: a transfer, a card swipe'
+}
+
+Table payment_allocation {
+  payment_id int [not null, ref: > payment.payment_id]
+  charge_id int [not null, ref: > charge.charge_id]
+  allocated_amount decimal(10,2) [not null]
+
+  indexes {
+    (charge_id, payment_id) [pk]
+  }
+
+  Note: '1 row = how much of a payment settled a given charge. One swipe can settle two charges, and one charge can be split across methods'
+}
+
+Table installment {
+  installment_id int [pk]
+  payment_id int [not null, ref: > payment.payment_id]
+  amount decimal(10,2) [not null]
+  installment_number int [not null, check: `installment_number between 1 and 6`]
+  due_date date [not null, note: 'When the card processor transfers the money']
+  settled_on date [note: 'Empty = has not cleared yet']
+
+  indexes {
+    (payment_id, installment_number) [unique]
+  }
+
+  Note: '1 row = one receivable. Cash, debit and transfers have a single one'
+}
+
+Table payer_invoice {
+  invoice_id int [pk]
+  payer_id int [not null, ref: > payer.payer_id]
+  facility_id int [not null, ref: > facility.facility_id]
+  billing_period date [not null, note: 'Reference month, stored as its first day']
+  submitted_on date [not null]
+  paid_on date [note: 'Empty = still open. Measures the 30 to 90 day lag']
+  amount_received decimal(10,2) [note: 'What actually landed in the account: a bank fact, not a calculation. Billed and denied are the sum of the lines']
+
+  indexes {
+    (payer_id, facility_id, billing_period) [unique]
+  }
+
+  Note: '1 row = the monthly invoice sent to a payer by a site'
+}
+
+Table denial_reason {
+  denial_reason_id int [pk]
+  reason_description varchar(50) [not null, unique, note: 'Missing authorisation, service not covered, mistyped code']
+
+  Note: '1 row = one reason a payer refused to pay'
+}
+
+Table invoice_line {
+  invoice_line_id int [pk]
+  invoice_id int [not null, ref: > payer_invoice.invoice_id]
+  charge_id int [not null, unique, ref: - charge.charge_id, note: 'Payer charges only. Unique: a charge cannot be invoiced twice']
+  denied_amount decimal(10,2) [not null, default: 0, note: 'Zero = paid in full. The billed amount is the charge amount']
+  denial_reason_id int [ref: >? denial_reason.denial_reason_id, note: 'Empty when nothing was denied']
+
+  Note: '1 row = one payer charge inside an invoice'
+}
+
+
+//========== CLINICAL DATA (restricted, LGPD art. 11) ==========
+Table clinical_note {
+  note_id int [pk]
+  appointment_id int [not null, unique, ref: - appointment.appointment_id, note: 'One note per completed procedure: each provider writes and signs their own']
+  chief_complaint varchar(150) [not null]
+  treatment_plan varchar(150) [not null]
+  recorded_at timestamp [not null, note: 'May be written after the procedure']
+
+  Note: 'Restricted access. 1 row = the clinical record of one completed procedure'
+}
+
+Table icd10 {
+  icd10_code varchar(10) [pk, note: 'The natural key is the PK: E03.9 is an official, stable code']
+  icd10_description varchar(150) [not null]
+
+  Note: '1 row = one ICD-10 code'
+}
+
+Table clinical_note_diagnosis {
+  note_id int [not null, ref: > clinical_note.note_id]
+  icd10_code varchar(10) [not null, ref: > icd10.icd10_code]
+  diagnosis_type varchar(50) [not null, note: 'primary or secondary. The text of the diagnosis already lives in icd10']
+
+  indexes {
+    (note_id, icd10_code) [pk]
+  }
+
+  Note: 'Restricted access. 1 row = one diagnosis recorded in a note'
+}
