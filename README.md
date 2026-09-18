@@ -31,6 +31,8 @@ None of those survive a single flat spreadsheet where patient, provider, service
 
 ## Model at a glance
 
+![ER diagram of the clinic model: 30 tables grouped into clinic structure, services and prices, patients, scheduling, money and clinical records](model/er_model.png)
+
 ```
 CLINIC STRUCTURE (7)    facility · room · provider · specialty
                         provider_specialty · provider_schedule
